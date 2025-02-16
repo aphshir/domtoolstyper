@@ -219,6 +219,7 @@ class _Typer extends State<Typer> {
   late bool addlines;
   late int valaddlines;
   final controler = TextEditingController();
+  double progress = 0;
 
   @override
   void initState() {
@@ -235,6 +236,7 @@ class _Typer extends State<Typer> {
         setState(() {
                   times--;
         });
+        updateProgress();
         controler.text = "";
         if (times == 0){
           setState(() {
@@ -249,12 +251,24 @@ class _Typer extends State<Typer> {
         if (addlines){
           setState(() {
             times += valaddlines;
+            updateProgress();
           });
 
         }
       }
     }
   }
+  updateProgress(){
+    setState(() {
+      progress = 1 - times/widget.times;
+    });
+  }
+  _debugsetprogress(double val){
+    setState(() {
+      progress = val;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
@@ -288,7 +302,12 @@ class _Typer extends State<Typer> {
                 enabled: en,
                 obscureText: hidden,
               ),
-            )
+            ),
+          LinearProgressIndicator(
+            value: progress,
+          ),
+          ElevatedButton(onPressed: _debugsetprogress(progress+0.25), child: Text("+")),
+          ElevatedButton(onPressed: _debugsetprogress(progress-0.25), child: Text("-")),
           ],
         )
       )
