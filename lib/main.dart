@@ -222,6 +222,7 @@ class _Typer extends State<Typer> {
   double progress = 0;
   int ptyped = 0;
   int ptotal = 0;
+  List<String> errorh = <String>[];
 
   @override
   void initState() {
@@ -251,6 +252,10 @@ class _Typer extends State<Typer> {
 
       }
       else if (impt[impt.length-1] != totype[impt.length-1]){
+        setState(() {
+          errorh.insert(0,"typo ! entry: ${controler.text} expected: ${totype[impt.length-1]} got \"${impt[impt.length-1]}\"");  
+        });
+        
         controler.text = "";
         if (addlines){
           setState(() {
@@ -279,12 +284,7 @@ class _Typer extends State<Typer> {
     // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
         title: Text("Type"),
       ),
       body: Center(
@@ -312,6 +312,28 @@ class _Typer extends State<Typer> {
               value: progress,
             ),
           ),
+          SizedBox(height: 20,),
+          Text("Typo historic"),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant)
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: SizedBox(
+                height: 200,
+                width: 500,
+                child: ListView.builder(
+                  itemCount: errorh.length,
+                  itemBuilder: (context, index){
+                    return ListTile(
+                      title: Text(errorh[index]),
+                    );
+                  }
+                )
+              ),
+            ),
+          )
           ],
         )
       )
