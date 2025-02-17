@@ -31,7 +31,7 @@ class MyApp extends StatelessWidget {
         //
         // This works for code too, not just values: Most code changes can be
         // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
       ),
       home: const MyHomePage(),
     );
@@ -220,6 +220,8 @@ class _Typer extends State<Typer> {
   late int valaddlines;
   final controler = TextEditingController();
   double progress = 0;
+  int ptyped = 0;
+  int ptotal = 0;
 
   @override
   void initState() {
@@ -229,12 +231,14 @@ class _Typer extends State<Typer> {
     hidden = widget.hidden;
     addlines = widget.addlines;
     valaddlines = widget.valaddlines;
+    ptotal = widget.times;
   }
   void checker(String impt){
     if (impt.isNotEmpty){
       if (impt == totype){
         setState(() {
                   times--;
+                  ptyped++;
         });
         updateProgress();
         controler.text = "";
@@ -251,6 +255,7 @@ class _Typer extends State<Typer> {
         if (addlines){
           setState(() {
             times += valaddlines;
+            ptotal += valaddlines;
             updateProgress();
           });
 
@@ -260,12 +265,7 @@ class _Typer extends State<Typer> {
   }
   updateProgress(){
     setState(() {
-      progress = 1 - times/widget.times;
-    });
-  }
-  _debugsetprogress(double val){
-    setState(() {
-      progress = val;
+      progress = ptyped/ptotal;
     });
   }
 
@@ -303,11 +303,15 @@ class _Typer extends State<Typer> {
                 obscureText: hidden,
               ),
             ),
-          LinearProgressIndicator(
-            value: progress,
+          SizedBox(height: 20,),
+          Text("Progress: ${(ptyped/ptotal*100).round()}%"),
+          SizedBox(
+            height: 20,
+            width: 500,
+            child: LinearProgressIndicator(
+              value: progress,
+            ),
           ),
-          ElevatedButton(onPressed: _debugsetprogress(progress+0.25), child: Text("+")),
-          ElevatedButton(onPressed: _debugsetprogress(progress-0.25), child: Text("-")),
           ],
         )
       )
