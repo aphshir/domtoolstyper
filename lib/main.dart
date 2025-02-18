@@ -1,7 +1,10 @@
-import 'dart:developer';
+import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:openpgp/openpgp.dart';
 
 void main() {
   runApp(const MyApp());
@@ -55,31 +58,34 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-    bool hidden = false;
-    bool addlines = false;
-    final valaddlines = TextEditingController();
-    final texttcpy = TextEditingController();
-    final nbtcpy = TextEditingController();
+  
+  bool hidden = false;
+  bool addlines = false;
+  final valaddlines = TextEditingController();
+  final texttcpy = TextEditingController();
+  final nbtcpy = TextEditingController();
+  
+    
 
-    void sumbiter(){
-      if (addlines && valaddlines.text.isEmpty){
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please enter a value for the number of lines to add for each wrong letter")));
-      }
-      else if (texttcpy.text.isEmpty){
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please enter a value for the text to type")));
-      }
-      else if (nbtcpy.text.isEmpty){
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please enter a value for the number of times to type the text")));
-      }
-      else{
-        int valaddLines = addlines ? int.parse(valaddlines.text) : 0;
-        Navigator.push(context, 
-          MaterialPageRoute(builder: 
-           (context) => Typer(totype: texttcpy.text, times: int.parse(nbtcpy.text), hidden: hidden, addlines: addlines, valaddlines: valaddLines)
-          )
-        );
-      }
+  void sumbiter(){
+    if (addlines && valaddlines.text.isEmpty){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please enter a value for the number of lines to add for each wrong letter")));
     }
+    else if (texttcpy.text.isEmpty){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please enter a value for the text to type")));
+    }
+    else if (nbtcpy.text.isEmpty){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please enter a value for the number of times to type the text")));
+    }
+    else{
+      int valaddLines = addlines ? int.parse(valaddlines.text) : 0;
+      Navigator.push(context, 
+        MaterialPageRoute(builder: 
+          (context) => Typer(totype: texttcpy.text, times: int.parse(nbtcpy.text), hidden: hidden, addlines: addlines, valaddlines: valaddLines)
+        )
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,6 +103,7 @@ class _MyHomePageState extends State<MyHomePage> {
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
         child: Column(
+          
           children: <Widget>[
             SizedBox(height: 10,),
             Row(
@@ -223,16 +230,64 @@ class _Typer extends State<Typer> {
   int ptyped = 0;
   int ptotal = 0;
   List<String> errorh = <String>[];
+  late final int fixedoriginaltotal;
 
   @override
   void initState() {
     super.initState();
+    fixedoriginaltotal = widget.times;
     totype = widget.totype;
     times = widget.times;
     hidden = widget.hidden;
     addlines = widget.addlines;
     valaddlines = widget.valaddlines;
     ptotal = widget.times;
+    super.initState();
+    loadPGPKey('assets/private.asc').then((key) {
+      setState(() {
+        pgpKey = key;
+      });
+    });
+  }
+    Future<String> loadPGPKey(String path) async {
+    return await rootBundle.loadString(path);
+  }
+  late String pgpKey;
+  Future<void> saveSignedMessage(String signedMessage) async {
+  String? outputPath = await FilePicker.platform.saveFile(
+    dialogTitle: 'Save the signed file',
+    fileName: 'signed.txt',
+    type: FileType.custom,
+    allowedExtensions: ['txt'],
+  );
+
+  if (outputPath != null) {
+    File file = File(outputPath);
+    await file.writeAsString(signedMessage);
+  } else {
+  }
+}
+/*
+Domtools typer certificate:
+Sentences to type: "$totype"
+Original number of lines: $fixedoriginaltotal
+Number of lines to typed: $times
+add lines for each wrong letter? $addlines
+Number of lines added for each wrong letter: $valaddlines
+Is the text hidden? $hidden
+
+This certificate confirms that the task has been completed successfully*/
+  void getmsg() async{
+    final message = "Sentences to type: \"$totype\" Original number of lines: $fixedoriginaltotal Number of lines to typed: $ptotal add lines for each wrong letter? $addlines Number of lines added for each wrong letter: $valaddlines Is the text hidden? $hidden";
+    String signed = await OpenPGP.sign(message, pgpKey,"");
+    String fullmessage = '''
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA256
+
+$message
+$signed
+''';
+    saveSignedMessage(fullmessage);
   }
   void checker(String impt){
     if (impt.isNotEmpty){
@@ -280,10 +335,11 @@ class _Typer extends State<Typer> {
     // by the _incrementCounter method above.
     //
     // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
+    // fast, so that you can just rebuild anything that needs updating ratherq
     // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
+        scrolledUnderElevation: 0,
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text("Type"),
       ),
@@ -333,8 +389,14 @@ class _Typer extends State<Typer> {
                 )
               ),
             ),
-          )
-          ],
+          ),
+          SizedBox(height: 20,),
+            ElevatedButton(
+            onPressed: !en ? getmsg : null, 
+            child: Text("Get pgp confirmation"),
+            )
+            ],
+           
         )
       )
     );
